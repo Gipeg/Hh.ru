@@ -264,3 +264,98 @@ gcc -o callpython callpython.c -I/usr/include/python3.X -lpython3.X
 ---
 
 Хочешь, я могу подготовить архив с этими файлами или помочь с компиляцией под твою ОС?
+
+# threads_demo.py
+
+import threading
+import time
+import _thread
+
+# ========== 5.1 Приложение с семафорами ==========
+def semaphore_example():
+    sem = threading.Semaphore(2)  # максимум 2 потока одновременно
+
+    def task(i):
+        print(f"Поток {i} ожидает семафор")
+        with sem:
+            print(f"Поток {i} зашел в критическую секцию")
+            time.sleep(2)
+            print(f"Поток {i} вышел из критической секции")
+
+    for i in range(5):
+        threading.Thread(target=task, args=(i,)).start()
+
+# ========== 5.2 Обмен сообщениями через Event ==========
+def event_example():
+    event = threading.Event()
+
+    def wait_for_event():
+        print("Ожидание события...")
+        event.wait()
+        print("Событие произошло! Поток продолжает работу.")
+
+    def trigger_event():
+        time.sleep(2)
+        print("Установка события")
+        event.set()
+
+    threading.Thread(target=wait_for_event).start()
+    threading.Thread(target=trigger_event).start()
+
+# ========== 5.3 Обмен сообщениями через Condition ==========
+def condition_example():
+    condition = threading.Condition()
+    shared_data = []
+
+    def producer():
+        with condition:
+            print("Производитель добавляет данные")
+            shared_data.append("сообщение")
+            condition.notify()
+
+    def consumer():
+        with condition:
+            print("Потребитель ждет данные")
+            condition.wait()
+            print("Потребитель получил:", shared_data.pop())
+
+    threading.Thread(target=consumer).start()
+    time.sleep(1)
+    threading.Thread(target=producer).start()
+
+# ========== 5.4 Низкоуровневый поток через _thread ==========
+def low_level_thread_example():
+    def thread_func(name, delay):
+        for i in range(3):
+            print(f"[{name}] Итерация {i}")
+            time.sleep(delay)
+        print(f"[{name}] Завершен")
+
+    try:
+        _thread.start_new_thread(thread_func, ("Низкий поток 1", 1))
+        _thread.start_new_thread(thread_func, ("Низкий поток 2", 1.5))
+    except Exception as e:
+        print("Ошибка при запуске потока:", e)
+
+    # Пауза основного потока, чтобы дочерние успели завершиться
+    time.sleep(5)
+
+# ========== Меню запуска ==========
+if __name__ == "__main__":
+    print("Выбери задание:")
+    print("1 - Семафоры")
+    print("2 - Event")
+    print("3 - Condition")
+    print("4 - _thread (низкий уровень)")
+
+    choice = input("Ввод: ")
+    if choice == "1":
+        semaphore_example()
+    elif choice == "2":
+        event_example()
+    elif choice == "3":
+        condition_example()
+    elif choice == "4":
+        low_level_thread_example()
+    else:
+        print("Неверный выбор")

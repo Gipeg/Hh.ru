@@ -1,201 +1,163 @@
-Отлично, ты привел весь план по созданию сетевого чата. Ниже я приведу поочередно **готовые к запуску коды** для всех шагов из твоего описания — с пояснениями и нужными правками:
+Конечно! Вот **один файл**, который содержит все этапы — от простого эха-сервера до оконного клиента. Просто запусти нужную часть, закомментировав остальное:
 
----
-
-## **5.1 Клиент-серверное приложение**
-
-### **5.1.1 Сервер (server.py)**
 ```python
-import socket
+# chat_app.py
 
-HOST = ''
-PORT = 50007
-
-s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-s.bind((HOST, PORT))
-s.listen(1)
-
-print("Ожидание подключения клиента...")
-conn, addr = s.accept()
-print('Подключен клиент:', addr)
-
-while True:
-    data = conn.recv(1024)
-    if not data:
-        break
-    print('Получено сообщение:', data.decode('utf-8'))
-    conn.sendall(data)
-
-conn.close()
-```
-
-### **5.1.2 Клиент (client.py)**
-```python
-import socket
-
-HOST = 'localhost'
-PORT = 50007
-
-s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-s.connect((HOST, PORT))
-s.sendall('Hello, world'.encode())
-data = s.recv(1024)
-s.close()
-
-print('Сообщение сервера:', data.decode('utf-8'))
-```
-
----
-
-## **5.2 Общий чат**
-
-### **5.2.1 Клиент (chat_client.py)**
-```python
-import socket
-
-HOST = 'localhost'
-PORT = 50007
-
-s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-s.connect((HOST, PORT))
-
-while True:
-    message = input("Введите сообщение (end для выхода): ")
-    if message == 'end':
-        break
-    s.sendall(message.encode())
-
-s.close()
-```
-
-### **5.2.2 Сервер (chat_server.py)**
-```python
 import socket
 from datetime import datetime
-
-HOST = ''
-PORT = 50007
-
-s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-s.bind((HOST, PORT))
-s.listen(1)
-
-print("Сервер запущен...")
-
-while True:
-    conn, addr = s.accept()
-    print(f"Новое подключение от {addr}")
-    while True:
-        data = conn.recv(1024)
-        if not data:
-            break
-        now = datetime.now().strftime("%Y.%m.%d %H:%M:%S")
-        print(f"{now} ({addr}): {data.decode('utf-8')}")
-    conn.close()
-```
-
----
-
-## **5.3 Чат с логинами**
-
-### **5.3.1 Клиент (user_client.py)**
-```python
-import socket
-
-HOST = 'localhost'
-PORT = 50007
-
-s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-s.connect((HOST, PORT))
-
-login = input("Введите логин: ")
-s.sendall(login.encode())
-
-while True:
-    message = input("Сообщение (end для выхода): ")
-    if message == 'end':
-        break
-    s.sendall(message.encode())
-
-s.close()
-```
-
-### **5.3.2 Сервер (user_server.py)**
-```python
-import socket
-from datetime import datetime
-
-HOST = ''
-PORT = 50007
-
-s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-s.bind((HOST, PORT))
-s.listen(1)
-
-print("Сервер запущен...")
-
-while True:
-    conn, addr = s.accept()
-    login = conn.recv(1024).decode('utf-8')
-    print(f"Подключился {login}")
-
-    while True:
-        data = conn.recv(1024)
-        if not data:
-            break
-        now = datetime.now().strftime("%Y.%m.%d %H:%M:%S")
-        print(f"{now} {login}: {data.decode('utf-8')}")
-    conn.close()
-```
-
----
-
-## **5.4 Оконный клиент (tkinter_client.py)**
-
-### **Оконный клиент с логином и сообщением**
-```python
-import socket
+import threading
 import tkinter as tk
 from tkinter import messagebox
 
-def send_message():
-    login = login_entry.get()
-    msg = message_entry.get()
-    if not login or not msg:
-        messagebox.showwarning("Пустые поля", "Введите логин и сообщение")
-        return
-    try:
-        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        s.connect((HOST, PORT))
-        s.sendall(login.encode())
-        s.sendall(msg.encode())
-        s.close()
-        message_entry.delete(0, tk.END)
-    except Exception as e:
-        messagebox.showerror("Ошибка подключения", str(e))
-
 HOST = 'localhost'
 PORT = 50007
 
-root = tk.Tk()
-root.title("Оконный чат-клиент")
+# ============== 5.1.1 Сервер с эхом ==============
+def echo_server():
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    s.bind(('', PORT))
+    s.listen(1)
+    print("Сервер запущен (echo)... Ожидание клиента...")
+    conn, addr = s.accept()
+    print('Подключен клиент:', addr)
+    while True:
+        data = conn.recv(1024)
+        if not data:
+            break
+        print("Получено сообщение:", data.decode('utf-8'))
+        conn.sendall(data)
+    conn.close()
 
-tk.Label(root, text="Логин:").pack()
-login_entry = tk.Entry(root)
-login_entry.pack()
+# ============== 5.1.2 Клиент с эхом ==============
+def echo_client():
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    s.connect((HOST, PORT))
+    s.sendall("Hello, world".encode())
+    data = s.recv(1024)
+    s.close()
+    print("Сообщение сервера:", data.decode('utf-8'))
 
-tk.Label(root, text="Сообщение:").pack()
-message_entry = tk.Entry(root, width=50)
-message_entry.pack()
+# ============== 5.2.2 Сервер общего чата ==============
+def chat_server():
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    s.bind(('', PORT))
+    s.listen(5)
+    print("Сервер общего чата запущен...")
 
-tk.Button(root, text="Отправить", command=send_message).pack(pady=10)
+    def handle_client(conn, addr):
+        while True:
+            data = conn.recv(1024)
+            if not data:
+                break
+            now = datetime.now().strftime("%Y.%m.%d %H:%M:%S")
+            print(f"{now} ({addr}): {data.decode('utf-8')}")
+        conn.close()
 
-root.mainloop()
+    while True:
+        conn, addr = s.accept()
+        threading.Thread(target=handle_client, args=(conn, addr)).start()
+
+# ============== 5.2.1 Клиент общего чата ==============
+def chat_client():
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    s.connect((HOST, PORT))
+    while True:
+        msg = input("Введите сообщение (end - выход): ")
+        if msg == 'end':
+            break
+        s.sendall(msg.encode())
+    s.close()
+
+# ============== 5.3.2 Сервер с логинами ==============
+def login_chat_server():
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    s.bind(('', PORT))
+    s.listen(5)
+    print("Сервер с логинами запущен...")
+
+    def handle_client(conn, addr):
+        login = conn.recv(1024).decode('utf-8')
+        print(f"Подключился {login}")
+        while True:
+            data = conn.recv(1024)
+            if not data:
+                break
+            now = datetime.now().strftime("%Y.%m.%d %H:%M:%S")
+            print(f"{now} {login}: {data.decode('utf-8')}")
+        conn.close()
+
+    while True:
+        conn, addr = s.accept()
+        threading.Thread(target=handle_client, args=(conn, addr)).start()
+
+# ============== 5.3.1 Клиент с логином ==============
+def login_chat_client():
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    s.connect((HOST, PORT))
+    login = input("Введите логин: ")
+    s.sendall(login.encode())
+    while True:
+        msg = input("Введите сообщение (end - выход): ")
+        if msg == 'end':
+            break
+        s.sendall(msg.encode())
+    s.close()
+
+# ============== 5.4.1 Оконный клиент ==============
+def gui_client():
+    def send_message():
+        login = login_entry.get()
+        msg = message_entry.get()
+        if not login or not msg:
+            messagebox.showwarning("Ошибка", "Введите логин и сообщение")
+            return
+        try:
+            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            s.connect((HOST, PORT))
+            s.sendall(login.encode())
+            s.sendall(msg.encode())
+            s.close()
+            message_entry.delete(0, tk.END)
+        except Exception as e:
+            messagebox.showerror("Ошибка", str(e))
+
+    root = tk.Tk()
+    root.title("Оконный чат-клиент")
+
+    tk.Label(root, text="Логин:").pack()
+    login_entry = tk.Entry(root)
+    login_entry.pack()
+
+    tk.Label(root, text="Сообщение:").pack()
+    message_entry = tk.Entry(root, width=50)
+    message_entry.pack()
+
+    tk.Button(root, text="Отправить", command=send_message).pack(pady=10)
+    root.mainloop()
+
+# ============== Запуск нужной части ==============
+if __name__ == '__main__':
+    # Раскомментируй нужную функцию для запуска:
+
+    # echo_server()
+    # echo_client()
+    # chat_server()
+    # chat_client()
+    # login_chat_server()
+    # login_chat_client()
+    # gui_client()
+    pass
 ```
 
 ---
 
-Хочешь, я соберу все эти скрипты в структуру проекта (папки, названия файлов) и дам архивом или инструкцией, как всё быстро развернуть?
+### **Инструкция по запуску:**
+1. Сохрани файл как `chat_app.py`.
+2. Открой два окна терминала или IDLE:
+   - В первом — **раскомментируй `login_chat_server()`** и запусти.
+   - Во втором — **раскомментируй `login_chat_client()`** (или `gui_client()` для окна) и запусти.
+
+Хочешь, я могу сделать автозапуск с меню выбора прямо в консоли?
 
 
 Подключение модулей C и Python возможно через API Python/C и `ctypes`. Вот примеры для двух направлений:

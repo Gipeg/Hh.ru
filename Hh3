@@ -1,0 +1,113 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="https://github.com/avaloniaui"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:YourApp.ViewModels"
+             mc:Ignorable="d">
+
+    <UserControl.DataContext>
+        <vm:RegistrationViewModel />
+    </UserControl.DataContext>
+
+    <Grid Padding="20" RowDefinitions="Auto,Auto,Auto,Auto,Auto" ColumnDefinitions="Auto,*" RowSpacing="10">
+        
+        <!-- Username -->
+        <TextBlock Text="Username:" Grid.Row="0" Grid.Column="0" VerticalAlignment="Center"/>
+        <TextBox Grid.Row="0" Grid.Column="1" 
+                 Text="{Binding Username, UpdateSourceTrigger=PropertyChanged, ValidatesOnDataErrors=True}" />
+        
+        <!-- Email -->
+        <TextBlock Text="Email:" Grid.Row="1" Grid.Column="0" VerticalAlignment="Center"/>
+        <TextBox Grid.Row="1" Grid.Column="1" 
+                 Text="{Binding Email, UpdateSourceTrigger=PropertyChanged, ValidatesOnDataErrors=True}" />
+        
+        <!-- Password -->
+        <TextBlock Text="Password:" Grid.Row="2" Grid.Column="0" VerticalAlignment="Center"/>
+        <TextBox Grid.Row="2" Grid.Column="1" 
+                 Text="{Binding Password, UpdateSourceTrigger=PropertyChanged, ValidatesOnDataErrors=True}"
+                 PasswordChar="●" />
+        
+        <!-- Confirm Password -->
+        <TextBlock Text="Confirm Password:" Grid.Row="3" Grid.Column="0" VerticalAlignment="Center"/>
+        <TextBox Grid.Row="3" Grid.Column="1" 
+                 Text="{Binding ConfirmPassword, UpdateSourceTrigger=PropertyChanged, ValidatesOnDataErrors=True}"
+                 PasswordChar="●" />
+        
+        <!-- Submit Button -->
+        <Button Grid.Row="4" Grid.Column="1" Content="Register" Command="{Binding RegisterCommand}" HorizontalAlignment="Right"/>
+    </Grid>
+</UserControl>
+
+
+using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
+using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+using System.Windows.Input;
+
+namespace YourApp.ViewModels;
+
+public partial class RegistrationViewModel : ObservableValidator
+{
+    [ObservableProperty]
+    [NotifyDataErrorInfo]
+    [Required(ErrorMessage = "Username is required.")]
+    [MinLength(3, ErrorMessage = "Username must be at least 3 characters.")]
+    private string username;
+
+    [ObservableProperty]
+    [NotifyDataErrorInfo]
+    [Required(ErrorMessage = "Email is required.")]
+    [EmailAddress(ErrorMessage = "Invalid email address.")]
+    private string email;
+
+    [ObservableProperty]
+    [NotifyDataErrorInfo]
+    [Required(ErrorMessage = "Password is required.")]
+    [MinLength(6, ErrorMessage = "Password must be at least 6 characters.")]
+    private string password;
+
+    [ObservableProperty]
+    [NotifyDataErrorInfo]
+    [Required(ErrorMessage = "Please confirm your password.")]
+    private string confirmPassword;
+
+    public ICommand RegisterCommand { get; }
+
+    public RegistrationViewModel()
+    {
+        RegisterCommand = new RelayCommand(OnRegister, CanRegister);
+    }
+
+    private bool CanRegister()
+    {
+        ValidateAllProperties();
+        return !HasErrors && Password == ConfirmPassword;
+    }
+
+    private void OnRegister()
+    {
+        // Здесь можно сохранить данные, показать сообщение или перейти на другую страницу
+        // Пример:
+        Console.WriteLine($"Registered: {Username}, {Email}");
+    }
+
+    partial void OnPasswordChanged(string value)
+    {
+        ValidateProperty(ConfirmPassword, nameof(ConfirmPassword));
+    }
+
+    partial void OnConfirmPasswordChanged(string value)
+    {
+        if (Password != ConfirmPassword)
+        {
+            SetErrors(nameof(ConfirmPassword), new[] { "Passwords do not match." });
+        }
+        else
+        {
+            ClearErrors(nameof(ConfirmPassword));
+        }
+    }
+}
+
+

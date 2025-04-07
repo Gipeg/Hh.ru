@@ -1,0 +1,137 @@
+Отлично, ты серьёзно продвигаешься в Avalonia! Давай начнём с **ControlsView и ControlsViewModel**, а затем я помогу оформить остальные элементы по шагам.
+
+---
+
+## **1. Создание `ControlsView.axaml` и `ControlsView.axaml.cs`**
+
+### `ControlsView.axaml`
+```xml
+<UserControl
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:vm="using:HelloApp.ViewModels"
+    x:Class="HelloApp.Views.ControlsView"
+    x:DataType="vm:ControlsViewModel">
+
+    <StackPanel Spacing="20" Padding="20">
+
+        <!-- Пример TextBlock с Run, Span, InlineUIContainer -->
+        <TextBlock>
+            <Span Background="LightGray" FontSize="20">
+                <Run Text="Привет, " Foreground="Red"/>
+                <Run Text="мир!" Foreground="Blue"/>
+            </Span>
+            <LineBreak/>
+            <Run Text="Как дела?" Foreground="Green"/>
+            <Run Text=" Отлично!" Foreground="Purple"/>
+            <LineBreak/>
+            <Bold>Жирный текст </Bold>
+            <Italic>Курсив </Italic>
+            <Underline>Подчёркнутый</Underline>
+            <LineBreak/>
+            <InlineUIContainer>
+                <Image Width="32" Height="32" Source="/Assets/avalonia-logo.ico"/>
+            </InlineUIContainer>
+            <InlineUIContainer>
+                <Button Content="Кнопка в тексте" Padding="5,0"/>
+            </InlineUIContainer>
+        </TextBlock>
+
+        <!-- Пример TextBox -->
+        <TextBox Watermark="Логин"/>
+        <TextBox Watermark="Пароль" PasswordChar="*"/>
+        <TextBox Watermark="Email" TextInputOptions.ContentType="Email"/>
+        <TextBox Watermark="Код" TextInputOptions.ContentType="Number"/>
+
+        <!-- CheckBox -->
+        <CheckBox Content="Согласен с условиями"/>
+
+        <!-- RadioButton -->
+        <StackPanel Orientation="Horizontal" Spacing="10">
+            <RadioButton Content="Мужской" GroupName="gender"/>
+            <RadioButton Content="Женский" GroupName="gender"/>
+            <RadioButton Content="Android" GroupName="platform"/>
+            <RadioButton Content="Desktop" GroupName="platform"/>
+        </StackPanel>
+
+        <!-- CalendarDatePicker + Label -->
+        <CalendarDatePicker SelectedDate="{Binding BirthDate}"/>
+        <TextBlock Text="{Binding AgeText}"/>
+
+        <!-- ComboBox -->
+        <ComboBox ItemsSource="{Binding Languages}" 
+                  SelectedItem="{Binding SelectedLanguage}" 
+                  Width="200"/>
+        <TextBlock Text="{Binding SelectedLanguage}" FontWeight="Bold"/>
+
+        <!-- Slider + Rectangle -->
+        <StackPanel>
+            <Slider Minimum="0" Maximum="1" Value="{Binding OpacityValue}" />
+            <Rectangle Fill="Red" Height="30"
+                       Opacity="{Binding OpacityValue}"/>
+        </StackPanel>
+
+        <!-- ToggleSwitch -->
+        <ToggleSwitch OnContent="Включено"
+                      OffContent="Выключено"
+                      IsChecked="{Binding IsToggled}"/>
+    </StackPanel>
+</UserControl>
+```
+
+---
+
+## **2. `ControlsView.axaml.cs`**
+```csharp
+using Avalonia.Controls;
+
+namespace HelloApp.Views
+{
+    public partial class ControlsView : UserControl
+    {
+        public ControlsView()
+        {
+            InitializeComponent();
+            DataContext = new HelloApp.ViewModels.ControlsViewModel();
+        }
+    }
+}
+```
+
+---
+
+## **3. `ControlsViewModel.cs`**
+```csharp
+using CommunityToolkit.Mvvm.ComponentModel;
+using System;
+using System.Collections.ObjectModel;
+
+namespace HelloApp.ViewModels
+{
+    public partial class ControlsViewModel : ViewModelBase
+    {
+        [ObservableProperty]
+        private DateTimeOffset? birthDate = DateTimeOffset.Now;
+
+        public string AgeText => BirthDate.HasValue
+            ? $"Возраст: {(int)((DateTimeOffset.Now - BirthDate.Value).TotalDays / 365)} лет"
+            : "Дата не выбрана";
+
+        public ObservableCollection<string> Languages { get; } =
+            new ObservableCollection<string> { "C#", "Python", "JavaScript", "Kotlin" };
+
+        [ObservableProperty]
+        private string selectedLanguage;
+
+        [ObservableProperty]
+        private double opacityValue = 1;
+
+        [ObservableProperty]
+        private bool isToggled;
+    }
+}
+```
+
+---
+
+## Хочешь — далее покажу `RegistrationView` с полной валидацией по `ObservableValidator`. Готов продолжать?

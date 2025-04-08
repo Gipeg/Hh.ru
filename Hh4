@@ -1,0 +1,182 @@
+// ViewModelBase.cs
+using CommunityToolkit.Mvvm.ComponentModel;
+
+public class ViewModelBase : ObservableObject
+{
+}
+
+// ViewLocator.cs
+using Avalonia.Controls;
+using Avalonia.Controls.Templates;
+using System;
+
+public class ViewLocator : IDataTemplate
+{
+    public bool SupportsRecycling => false;
+
+    public Control Build(object data)
+    {
+        var name = data.GetType().FullName?.Replace("ViewModel", "View");
+        var type = Type.GetType(name);
+
+        if (type != null)
+            return (Control)Activator.CreateInstance(type)!;
+        else
+            return new TextBlock { Text = "Not Found: " + name };
+    }
+
+    public bool Match(object data) => data is ViewModelBase;
+}
+
+// NavigationService.cs
+using System;
+using System.Collections.Generic;
+
+public class NavigationService
+{
+    private readonly Stack<ViewModelBase> _navigationStack = new();
+    public Action<ViewModelBase>? SetCurrentViewModel { get; set; }
+
+    public void NavigateTo<T>(T viewModel, Action<T>? action = null) where T : ViewModelBase
+    {
+        _navigationStack.Push(viewModel);
+        action?.Invoke(viewModel);
+        SetCurrentViewModel?.Invoke(viewModel);
+    }
+
+    public void GoBack(int steps = 1)
+    {
+        while (steps > 0 && _navigationStack.Count > 1)
+        {
+            _navigationStack.Pop();
+            steps--;
+        }
+
+        if (_navigationStack.TryPeek(out var viewModel))
+        {
+            SetCurrentViewModel?.Invoke(viewModel);
+        }
+    }
+}
+
+// MainViewModel.cs
+using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
+using System.Windows.Input;
+
+public partial class MainViewModel : ViewModelBase
+{
+    [ObservableProperty]
+    private ViewModelBase currentPage;
+
+    public static NavigationService Navigation { get; } = new NavigationService();
+
+    public MainViewModel()
+    {
+        Navigation.SetCurrentViewModel = vm => CurrentPage = vm;
+        CurrentPage = new AuthorizationViewModel();
+    }
+
+    public ICommand NavigateToAuthorizationCommand => new RelayCommand(() =>
+    {
+        Navigation.NavigateTo(new AuthorizationViewModel());
+    });
+
+    public ICommand NavigateToRegistrationCommand => new RelayCommand(() =>
+    {
+        Navigation.NavigateTo(new RegistrationViewModel());
+    });
+}
+
+// AuthorizationViewModel.cs
+using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
+using System.Windows.Input;
+
+public partial class AuthorizationViewModel : ViewModelBase
+{
+    [ObservableProperty]
+    private string username;
+
+    [ObservableProperty]
+    private string password;
+
+    public ICommand LoginCommand => new RelayCommand(() =>
+    {
+        // Здесь логика входа
+        Console.WriteLine($"Авторизация: {Username}, {Password}");
+    });
+}
+
+// RegistrationViewModel.cs
+using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
+using System.Windows.Input;
+
+public partial class RegistrationViewModel : ViewModelBase
+{
+    [ObservableProperty]
+    private string username;
+
+    [ObservableProperty]
+    private string password;
+
+    [ObservableProperty]
+    private string confirmPassword;
+
+    public ICommand RegisterCommand => new RelayCommand(() =>
+    {
+        // Здесь логика регистрации
+        Console.WriteLine($"Регистрация: {Username}, {Password}, {ConfirmPassword}");
+    });
+}
+
+// AuthorizationView.axaml
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="ИмяПроекта.AuthorizationView">
+  <StackPanel Margin="20">
+    <TextBlock Text="Авторизация" FontSize="20" Margin="0 0 0 10"/>
+    <TextBox Watermark="Логин" Text="{Binding Username, Mode=TwoWay}" Margin="0 0 0 5"/>
+    <TextBox Watermark="Пароль" Text="{Binding Password, Mode=TwoWay}" Margin="0 0 0 5"/>
+    <Button Content="Войти" Command="{Binding LoginCommand}"/>
+  </StackPanel>
+</UserControl>
+
+// RegistrationView.axaml
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="ИмяПроекта.RegistrationView">
+  <StackPanel Margin="20">
+    <TextBlock Text="Регистрация" FontSize="20" Margin="0 0 0 10"/>
+    <TextBox Watermark="Логин" Text="{Binding Username, Mode=TwoWay}" Margin="0 0 0 5"/>
+    <TextBox Watermark="Пароль" Text="{Binding Password, Mode=TwoWay}" Margin="0 0 0 5"/>
+    <TextBox Watermark="Повторите пароль" Text="{Binding ConfirmPassword, Mode=TwoWay}" Margin="0 0 0 5"/>
+    <Button Content="Зарегистрироваться" Command="{Binding RegisterCommand}"/>
+  </StackPanel>
+</UserControl>
+
+// MainWindow.axaml
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:local="clr-namespace:ИмяПроекта"
+        x:Class="ИмяПроекта.MainWindow"
+        Title="MainWindow" Width="400" Height="300">
+  <StackPanel>
+    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="10">
+      <Button Content="Авторизация" Command="{Binding NavigateToAuthorizationCommand}" Margin="5"/>
+      <Button Content="Регистрация" Command="{Binding NavigateToRegistrationCommand}" Margin="5"/>
+    </StackPanel>
+    <ContentControl Content="{Binding CurrentPage}" />
+  </StackPanel>
+</Window>
+
+// App.axaml
+<Application xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="using:ИмяПроекта"
+             x:Class="ИмяПроекта.App">
+  <Application.DataTemplates>
+    <local:ViewLocator/>
+  </Application.DataTemplates>
+</Application>

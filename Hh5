@@ -1,0 +1,101 @@
+// Models/User.cs
+public class User
+{
+    public string Login { get; set; }
+    public string Password { get; set; }
+}
+
+// ViewModels/UserListViewModel.cs
+using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
+using System.Collections.ObjectModel;
+using System.Windows.Input;
+
+public partial class UserListViewModel : ViewModelBase
+{
+    public ObservableCollection<User> Users { get; } = new()
+    {
+        new User { Login = "admin", Password = "1234" },
+        new User { Login = "user1", Password = "abcd" },
+        new User { Login = "guest", Password = "guest" }
+    };
+
+    [ObservableProperty] private string newLogin;
+    [ObservableProperty] private string newPassword;
+
+    public ICommand AddCommand => new RelayCommand(() =>
+    {
+        if (!string.IsNullOrWhiteSpace(NewLogin) && !string.IsNullOrWhiteSpace(NewPassword))
+        {
+            Users.Add(new User { Login = NewLogin, Password = NewPassword });
+            NewLogin = string.Empty;
+            NewPassword = string.Empty;
+        }
+    });
+
+    public ICommand DeleteCommand => new RelayCommand<User>(user =>
+    {
+        if (Users.Contains(user))
+            Users.Remove(user);
+    });
+}
+
+// Views/UserListView.axaml
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d"
+             x:Class="ИмяПроекта.UserListView">
+  <StackPanel Margin="10">
+
+    <!-- Добавление -->
+    <StackPanel Orientation="Horizontal" Margin="0 0 0 10">
+      <TextBox Watermark="Логин" Width="100" Text="{Binding NewLogin, Mode=TwoWay}" Margin="0 0 5 0"/>
+      <TextBox Watermark="Пароль" Width="100" Text="{Binding NewPassword, Mode=TwoWay}" Margin="0 0 5 0"/>
+      <Button Content="Добавить" Command="{Binding AddCommand}"/>
+    </StackPanel>
+
+    <!-- ListBox -->
+    <ListBox ItemsSource="{Binding Users}" Margin="0 0 0 10">
+      <ListBox.ItemTemplate>
+        <DataTemplate>
+          <StackPanel Orientation="Horizontal">
+            <TextBlock Text="{Binding Login}" Width="100"/>
+            <TextBlock Text="{Binding Password}" Width="100"/>
+            <Button Content="Удалить"
+                    Command="{Binding $parent[UserControl].DataContext.DeleteCommand}"
+                    CommandParameter="{Binding}"/>
+          </StackPanel>
+        </DataTemplate>
+      </ListBox.ItemTemplate>
+    </ListBox>
+
+    <!-- DataGrid -->
+    <DataGrid ItemsSource="{Binding Users}"
+              AutoGenerateColumns="False"
+              CanUserReorderColumns="True"
+              CanUserResizeColumns="True"
+              CanUserSortColumns="True"
+              Height="200">
+      <DataGrid.Columns>
+        <DataGridTextColumn Header="Логин" Binding="{Binding Login}" Width="*"/>
+        <DataGridTextColumn Header="Пароль" Binding="{Binding Password}" Width="*"/>
+        <DataGridTemplateColumn Header="" Width="Auto">
+          <DataGridTemplateColumn.CellTemplate>
+            <DataTemplate>
+              <Button Content="Удалить"
+                      Command="{Binding $parent[UserControl].DataContext.DeleteCommand}"
+                      CommandParameter="{Binding}"/>
+            </DataTemplate>
+          </DataGridTemplateColumn.CellTemplate>
+        </DataGridTemplateColumn>
+      </DataGrid.Columns>
+    </DataGrid>
+  </StackPanel>
+</UserControl>
+
+// App.axaml - добавить в <Application.Styles>
+<!--
+<StyleInclude Source="avares://Avalonia.Controls.DataGrid/Themes/Fluent.xaml"/>
+-->

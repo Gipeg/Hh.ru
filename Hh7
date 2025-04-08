@@ -1,0 +1,204 @@
+Хорошо! Вот **единый файл**, который содержит всё — модель `User`, `AppDbContext`, `UserService`, `UserListViewModel` и пример XAML-интерфейса. Это упрощённая демонстрационная реализация, которую можно вставить в Avalonia-проект для проверки.
+
+---
+
+### **MainWindow.axaml**
+
+```xml
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="https://github.com/avaloniaui"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:YourApp"
+        mc:Ignorable="d"
+        x:Class="YourApp.MainWindow"
+        Width="400" Height="500"
+        Title="User Manager">
+  
+  <Design.DataContext>
+    <local:UserListViewModel/>
+  </Design.DataContext>
+
+  <StackPanel Margin="10" DataContext="{Binding}">
+    <TextBox Text="{Binding Login}" PlaceholderText="Логин" Margin="0,0,0,5"/>
+    <TextBox Text="{Binding Password}" PlaceholderText="Пароль" Margin="0,0,0,10"/>
+
+    <StackPanel Orientation="Horizontal" Spacing="5" Margin="0,0,0,10">
+      <Button Content="Создать" Command="{Binding AddUserCommand}" />
+      <Button Content="Сохранить" Command="{Binding SaveUserCommand}" />
+    </StackPanel>
+
+    <ListBox Items="{Binding Users}" SelectedItem="{Binding SelectedUser}">
+      <ListBox.ItemTemplate>
+        <DataTemplate>
+          <StackPanel Orientation="Horizontal" Spacing="10">
+            <TextBlock Text="{Binding Login}" Width="100"/>
+            <Button Content="Редактировать"
+                    Command="{Binding DataContext.EditUserCommand, RelativeSource={RelativeSource AncestorType=ListBox}}"
+                    CommandParameter="{Binding}" />
+            <Button Content="Удалить"
+                    Command="{Binding DataContext.DeleteUserCommand, RelativeSource={RelativeSource AncestorType=ListBox}}"
+                    CommandParameter="{Binding}" />
+          </StackPanel>
+        </DataTemplate>
+      </ListBox.ItemTemplate>
+    </ListBox>
+  </StackPanel>
+</Window>
+```
+
+---
+
+### **MainWindow.xaml.cs и вся логика в одном файле**
+
+```csharp
+using Avalonia.Controls;
+using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
+using Microsoft.EntityFrameworkCore;
+using System;
+using System.Collections.ObjectModel;
+using System.IO;
+using System.Linq;
+
+namespace YourApp;
+
+public partial class MainWindow : Window
+{
+    public MainWindow()
+    {
+        InitializeComponent();
+        DataContext = new UserListViewModel();
+    }
+}
+
+// Модель
+public class User
+{
+    public int Id { get; set; }
+    public string Login { get; set; }
+    public string Password { get; set; }
+}
+
+// Контекст EF Core
+public class AppDbContext : DbContext
+{
+    public DbSet<User> Users { get; set; }
+
+    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+    {
+        string dbPath = GetDatabasePath("app.db");
+        optionsBuilder.UseSqlite($"Data Source={dbPath}");
+    }
+
+    private static string GetDatabasePath(string fileName)
+    {
+        string folder = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+        return Path.Combine(folder, fileName);
+    }
+}
+
+// Сервис
+public class UserService
+{
+    private readonly AppDbContext _context;
+
+    public UserService()
+    {
+        _context = new AppDbContext();
+        _context.Database.EnsureCreated();
+    }
+
+    public List<User> GetAllUsers() => _context.Users.ToList();
+
+    public void AddUser(User user)
+    {
+        _context.Users.Add(user);
+        _context.SaveChanges();
+    }
+
+    public void DeleteUser(User user)
+    {
+        _context.Users.Remove(user);
+        _context.SaveChanges();
+    }
+
+    public void UpdateUser(User user)
+    {
+        _context.Users.Update(user);
+        _context.SaveChanges();
+    }
+}
+
+// ViewModel
+public partial class UserListViewModel : ObservableObject
+{
+    private readonly UserService _userService = new();
+
+    [ObservableProperty] private string login;
+    [ObservableProperty] private string password;
+    [ObservableProperty] private User selectedUser;
+    public ObservableCollection<User> Users { get; set; }
+
+    public UserListViewModel()
+    {
+        Users = new ObservableCollection<User>(_userService.GetAllUsers());
+    }
+
+    [RelayCommand]
+    private void AddUser()
+    {
+        var user = new User { Login = Login, Password = Password };
+        _userService.AddUser(user);
+        Users.Add(user);
+        ClearFields();
+    }
+
+    [RelayCommand]
+    private void DeleteUser(User user)
+    {
+        _userService.DeleteUser(user);
+        Users.Remove(user);
+    }
+
+    [RelayCommand]
+    private void EditUser(User user)
+    {
+        SelectedUser = user;
+        Login = user.Login;
+        Password = user.Password;
+    }
+
+    [RelayCommand]
+    private void SaveUser()
+    {
+        if (SelectedUser != null)
+        {
+            SelectedUser.Login = Login;
+            SelectedUser.Password = Password;
+            _userService.UpdateUser(SelectedUser);
+
+            var index = Users.IndexOf(SelectedUser);
+            Users[index] = new User
+            {
+                Id = SelectedUser.Id,
+                Login = Login,
+                Password = Password
+            };
+
+            SelectedUser = null;
+            ClearFields();
+        }
+    }
+
+    private void ClearFields()
+    {
+        Login = string.Empty;
+        Password = string.Empty;
+    }
+}
+```
+
+---
+
+Если хочешь, я могу отправить это как готовый `.zip` или сгенерировать шаблон проекта. Хочешь собрать всё это автоматически или настроишь сам?

@@ -70,7 +70,7 @@
 </Application>
 ```
 
-Также пример `MainView.axaml`, чтобы протестировать элементы:
+// Для Коли 
 
 ```xml
 <UserControl xmlns="https://github.com/avaloniaui"

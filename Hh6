@@ -1,0 +1,124 @@
+Вот полный файл `App.axaml`, включающий все стили и подключение Material Avalonia:
+
+```xml
+<Application xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:themes="clr-namespace:Material.Styles.Themes;assembly=Material.Styles"
+             xmlns:a="clr-namespace:Material.Styles.Assists;assembly=Material.Styles"
+             x:Class="StyleDemo.App">
+  <Application.Styles>
+    <!-- Material Theme -->
+    <themes:MaterialTheme BaseTheme="Light" PrimaryColor="Purple" SecondaryColor="Lime" />
+
+    <!-- Общий стиль для кнопок -->
+    <Style Selector="Button">
+      <Setter Property="Background" Value="LightBlue"/>
+      <Setter Property="FontFamily" Value="Arial"/>
+    </Style>
+
+    <!-- Стиль для TextBox с Name="Title" -->
+    <Style Selector="TextBox#Title">
+      <Setter Property="Background" Value="LightYellow"/>
+    </Style>
+
+    <!-- Стиль для кнопок внутри StackPanel -->
+    <Style Selector="StackPanel Button">
+      <Setter Property="Background" Value="LightGreen"/>
+      <Setter Property="FontWeight" Value="Bold"/>
+    </Style>
+
+    <!-- Стиль для TextBlock в Border.highlight -->
+    <Style Selector="Border.highlight TextBlock">
+      <Setter Property="FontStyle" Value="Italic"/>
+    </Style>
+
+    <!-- Псевдоклассы -->
+    <Style Selector="Button:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="Orange"/>
+    </Style>
+
+    <Style Selector="TextBox:focus /template/ Border#PART_BorderElement">
+      <Setter Property="BorderBrush" Value="Red"/>
+    </Style>
+
+    <Style Selector="ListBoxItem:selected /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="LightCoral"/>
+    </Style>
+
+    <Style Selector="ListBoxItem:nth-child(even)">
+      <Setter Property="Background" Value="LightGray"/>
+    </Style>
+
+    <!-- Стили по привязке -->
+    <Style Selector="TextBlock.class1">
+      <Setter Property="Foreground" Value="Green"/>
+    </Style>
+    <Style Selector="TextBlock.class2">
+      <Setter Property="Foreground" Value="Red"/>
+    </Style>
+
+    <!-- Стиль для всех потомков Button -->
+    <Style Selector=":is(Button)">
+      <Setter Property="Background" Value="SkyBlue"/>
+    </Style>
+
+    <!-- Стиль по значению свойства -->
+    <Style Selector="TextBlock[FontSize=16]">
+      <Setter Property="Foreground" Value="DarkCyan"/>
+    </Style>
+  </Application.Styles>
+</Application>
+```
+
+Также пример `MainView.axaml`, чтобы протестировать элементы:
+
+```xml
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:a="clr-namespace:Material.Styles.Assists;assembly=Material.Styles"
+             x:Class="StyleDemo.Views.MainView">
+  <StackPanel Margin="20" Spacing="10">
+    
+    <TextBlock Text="Standard TextBlock"/>
+    
+    <TextBox Name="Title" Text="TextBox с ID Title"/>
+
+    <StackPanel>
+      <Button Content="Кнопка в StackPanel"/>
+    </StackPanel>
+
+    <Border Classes="highlight" BorderThickness="1" BorderBrush="Gray" Padding="5">
+      <TextBlock Text="TextBlock в highlight Border"/>
+    </Border>
+
+    <TextBox Text="Фокусный TextBox"/>
+    <Button Content="Наведи на меня"/>
+
+    <ListBox>
+      <ListBoxItem Content="Элемент 1"/>
+      <ListBoxItem Content="Элемент 2"/>
+      <ListBoxItem Content="Элемент 3"/>
+    </ListBox>
+
+    <TextBlock Text="Доход" Classes.class1="True"/>
+    <TextBlock Text="Расход" Classes.class2="True"/>
+
+    <TextBlock Text="Размер шрифта 16" FontSize="16"/>
+
+    <!-- Material элементы -->
+    <TextBox a:TextFieldAssist.Label="TextBox"
+             UseFloatingWatermark="True"
+             Theme="{StaticResource OutlineTextBox}"
+             Classes="outline densed"/>
+    
+    <ComboBox Theme="{StaticResource MaterialOutlineComboBox}"
+              a:ComboBoxAssist.Label="ComboBox">
+      <ComboBoxItem Content="Option 1"/>
+      <ComboBoxItem Content="Option 2"/>
+    </ComboBox>
+
+  </StackPanel>
+</UserControl>
+```
+
+Если нужно — могу собрать проект целиком с рабочими `ViewModel`, `Model` и структурой.

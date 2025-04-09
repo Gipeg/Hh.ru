@@ -1,0 +1,164 @@
+Отлично! Ниже — пошаговая реализация задания на Avalonia 5.1.1 с MVVM-подходом.
+
+---
+
+## **5.1 Отображение списков**
+
+### **5.1.1 Класс `User`**
+Создай файл `Models/User.cs`:
+
+```csharp
+namespace YourApp.Models;
+
+public class User
+{
+    public string Login { get; set; }
+    public string Password { get; set; }
+}
+```
+
+---
+
+### **5.1.2 Страница `UserListView` и ViewModel `UserListViewModel`**
+
+**Создай ViewModel: `ViewModels/UserListViewModel.cs`**
+
+```csharp
+using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
+using System.Collections.ObjectModel;
+using YourApp.Models;
+
+namespace YourApp.ViewModels;
+
+public partial class UserListViewModel : ObservableObject
+{
+    [ObservableProperty]
+    private string newLogin;
+
+    [ObservableProperty]
+    private string newPassword;
+
+    public ObservableCollection<User> Users { get; } = new()
+    {
+        new User { Login = "admin", Password = "1234" },
+        new User { Login = "user", Password = "pass" }
+    };
+
+    [RelayCommand]
+    private void AddUser()
+    {
+        if (!string.IsNullOrWhiteSpace(NewLogin) && !string.IsNullOrWhiteSpace(NewPassword))
+        {
+            Users.Add(new User { Login = NewLogin, Password = NewPassword });
+            NewLogin = string.Empty;
+            NewPassword = string.Empty;
+        }
+    }
+
+    [RelayCommand]
+    private void DeleteUser(User user)
+    {
+        Users.Remove(user);
+    }
+}
+```
+
+---
+
+**Создай View: `Views/UserListView.axaml`**
+
+```xml
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="https://github.com/avaloniaui"
+             xmlns:vm="clr-namespace:YourApp.ViewModels"
+             x:Class="YourApp.Views.UserListView">
+    <UserControl.DataContext>
+        <vm:UserListViewModel />
+    </UserControl.DataContext>
+
+    <StackPanel Margin="10" Spacing="10">
+        
+        <!-- Ввод логина и пароля -->
+        <StackPanel Orientation="Horizontal" Spacing="10">
+            <TextBox Width="150" Watermark="Логин" Text="{Binding NewLogin}" />
+            <TextBox Width="150" Watermark="Пароль" Text="{Binding NewPassword}" />
+            <Button Content="Добавить" Command="{Binding AddUserCommand}" />
+        </StackPanel>
+
+        <!-- ListBox -->
+        <ListBox ItemsSource="{Binding Users}">
+            <ListBox.ItemTemplate>
+                <DataTemplate>
+                    <StackPanel Orientation="Horizontal" Spacing="10">
+                        <TextBlock Text="{Binding Login}" Width="150" />
+                        <TextBlock Text="{Binding Password}" Width="150" />
+                        <Button Content="Удалить"
+                                Command="{Binding $parent[UserControl].DataContext.DeleteUserCommand}"
+                                CommandParameter="{Binding}" />
+                    </StackPanel>
+                </DataTemplate>
+            </ListBox.ItemTemplate>
+        </ListBox>
+    </StackPanel>
+</UserControl>
+```
+
+---
+
+## **5.4 Работа с DataGrid**
+
+### **5.4.1 Установка пакета**
+
+Добавь NuGet-пакет:
+```bash
+dotnet add package Avalonia.Controls.DataGrid
+```
+
+---
+
+### **5.4.2 Подключение стиля в `App.axaml`**
+
+```xml
+<Application xmlns="https://github.com/avaloniaui"
+             ...>
+    <Application.Styles>
+        ...
+        <StyleInclude Source="avares://Avalonia.Controls.DataGrid/Themes/Fluent.xaml"/>
+    </Application.Styles>
+</Application>
+```
+
+---
+
+### **5.4.3-5.4.6 DataGrid в `UserListView.axaml`**
+
+Добавь DataGrid под ListBox:
+
+```xml
+<DataGrid Items="{Binding Users}"
+          AutoGenerateColumns="False"
+          CanUserReorderColumns="True"
+          CanUserResizeColumns="True"
+          CanUserSortColumns="True"
+          Height="200">
+    <DataGrid.Columns>
+        <DataGridTextColumn Header="Логин" Binding="{Binding Login}" Width="*"/>
+        <DataGridTextColumn Header="Пароль" Binding="{Binding Password}" Width="*"/>
+        <DataGridTemplateColumn Header="Удалить">
+            <DataGridTemplateColumn.CellTemplate>
+                <DataTemplate>
+                    <Button Content="Удалить"
+                            Command="{Binding $parent[UserControl].DataContext.DeleteUserCommand}"
+                            CommandParameter="{Binding}" />
+                </DataTemplate>
+            </DataGridTemplateColumn.CellTemplate>
+        </DataGridTemplateColumn>
+    </DataGrid.Columns>
+</DataGrid>
+```
+
+---
+
+Хочешь, я оформлю это как полноценный проект в GitHub-стиле с `MainView`, `NavigationService` и ссылками между страницами?
